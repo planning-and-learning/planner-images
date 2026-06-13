@@ -1,0 +1,32 @@
+Bootstrap: docker
+From: python:3.13-slim
+
+%setup
+    rootfs="${APPTAINER_ROOTFS:-${SINGULARITY_ROOTFS:-}}"
+    if [ -n "$rootfs" ]; then
+        mkdir -p "$rootfs/proj"
+    fi
+
+%files
+    lifted-siwr /planner/lifted-siwr
+
+%post
+    apt-get update
+    apt-get install --no-install-recommends -y ca-certificates
+    python -m pip install --no-cache-dir pytyr==0.0.19 pyrunir==0.0.3
+    chmod +x /planner/lifted-siwr
+    rm -rf /var/lib/apt/lists/*
+
+%runscript
+    #! /bin/bash
+    set -euo pipefail
+    exec /planner/lifted-siwr "$@"
+
+%labels
+Name        Tyr-Lifted-SIW
+Description Lifted Serialized IW implemented through the pytyr Python bindings
+Authors     Dominik Drexler <dominik.drexler@liu.se>
+SupportsDerivedPredicates yes
+SupportsQuantifiedPreconditions yes
+SupportsQuantifiedEffects yes
+

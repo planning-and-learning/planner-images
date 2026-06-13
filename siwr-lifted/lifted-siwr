@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import argparse
+from dataclasses import dataclass
+from datetime import timedelta
+from pathlib import Path
+from time import perf_counter
+
+from pyrunir.datasets import LiftedTaskSearchContext
+from pyrunir.kr.dl.semantics import ConstructorRepositoryFactory as DLConstructorRepositoryFactory
+from pyrunir.kr.gp import LiftedPolicySearchOptions, RepositoryFactory as PolicyRepositoryFactory, find_lifted_solution
+from pyrunir.kr.gp.dl import parse_policy
+from pytyr.common import ExecutionContext
+from pytyr.formalism.planning import Parser, ParserOptions
+from pytyr.planning import SearchStatus
+from pytyr.planning.lifted import Task
+
+
+@dataclass(frozen=True)
+class PlannerRun:
+    result: object
+    search_time: float
+    num_expanded: int | None
+    num_generated: int | None
+    maximum_effective_width: int | None
+    average_effective_width: float | None
+    num_solved_subsearches: int
+
+
+@dataclass(frozen=True)
+class Options:
+    domain_file: Path
+    task_file: Path
+    plan_file: Path
+    policy_file: Path
+    max_arity: int
+    max_num_states: int
+    max_num_subsearches: int
+    max_time: float | None
+    num_threads: int
+    random_seed: int
+    shuffle_successors: bool
+    verbosity: int
+
+
+def parse_args() -> Options:
+    parser = argparse.ArgumentParser(description="Run Tyr lifted SIWR on one PDDL task.")
+    parser.add_argument("domain_file", type=Path)
+    parser.add_argument("task_file", type=Path)
+    parser.add_argument("plan_file", type=Path)
+    parser.add_argument("policy_file", type=Path)
+    parser.add_argument("--max-arity", type=int, default=0)
+    parser.add_argument("--max-num-states", type=int, default=1_000_000)
+    parser.add_argument("--max-num-subsearches", type=int, default=1_000_000)
+    parser.add_argument("--max-time", type=float, default=None, help="Search time limit in seconds.")
+    parser.add_argument("--num-threads", type=int, default=1)
+    parser.add_argument("--random-seed", type=int, default=0)
+    parser.add_argument("--shuffle-successors", action="store_true")
+    parser.add_argument("--verbosity", type=int, default=1)
+    args = parser.parse_args()
+
+    if args.max_arity < 0:
+        parser.error("--max-arity must be non-negative.")
+    if args.max_num_states < 1:
+        parser.error("--max-num-states must be at least 1.")
+    if args.max_num_subsearches < 1:
+        parser.error("--max-num-subsearches must be at least 1.")
+    if args.max_time is not None and args.max_time <= 0:
+        parser.error("--max-time must be greater than 0.")
+    if args.num_threads < 1:
+        parser.error("--num-threads must be at least 1.")
+
+    for path_name in ("domain_file", "task_file", "policy_file"):
+        path = getattr(args, path_name)
+        if not path.exists():
+            parser.error(f"{path_name.replace('_', ' ')} does not exist: {path}")
+
+    return Options(
+        domain_file=args.domain_file,
+        task_file=args.task_file,
+        plan_file=args.plan_file,
+        policy_file=args.policy_file,
+        max_arity=args.max_arity,
+        max_num_states=args.max_num_states,
+        max_num_subsearches=args.max_num_subsearches,
+        max_time=args.max_time,
+        num_threads=args.num_threads,
+        random_seed=args.random_seed,
+        shuffle_successors=args.shuffle_successors,
+        verbosity=args.verbosity,
+    )
+
+
+def time_limit(options: Options) -> timedelta | None:
+    return None if options.max_time is None else timedelta(seconds=options.max_time)
+
+
+def format_plan_action(action) -> str:
+    name = action.get_action().get_name()
+    objects = " ".join(obj.get_name() for obj in action.get_objects())
+    return f"({name} {objects})" if objects else f"({name})"
+
+
+def write_plan(result, plan_file: Path) -> None:
+    plan_file.parent.mkdir(parents=True, exist_ok=True)
+    if result.status != SearchStatus.SOLVED or result.plan is None:
+        plan_file.write_text(f"; status: {result.status.name}\n")
+        return
+
+    actions = [format_plan_action(node.label) for node in result.plan.get_labeled_succ_nodes()]
+    lines = [*actions, f"; cost = {result.plan.get_cost()} (unit cost)", f"; length = {result.plan.get_length()}"]
+    plan_file.write_text("\n".join(lines) + "\n")
+
+
+def create_policy_repositories(planning_domain):
+    dl_repository = DLConstructorRepositoryFactory().create(planning_domain)
+    policy_repository = PolicyRepositoryFactory().create(dl_repository)
+    return dl_repository, policy_repository
+
+
+def create_search_options(options: Options) -> LiftedPolicySearchOptions:
+    search_options = LiftedPolicySearchOptions()
+    search_options.max_arity = options.max_arity
+    search_options.brfs_options.max_num_states = options.max_num_states
+    search_options.brfs_options.max_time = time_limit(options)
+    search_options.brfs_options.random_seed = options.random_seed
+    search_options.brfs_options.shuffle_labeled_succ_nodes = options.shuffle_successors
+    search_options.iw_options.max_num_states = options.max_num_states
+    search_options.iw_options.max_time = time_limit(options)
+    search_options.iw_options.random_seed = options.random_seed
+    search_options.iw_options.shuffle_labeled_succ_nodes = options.shuffle_successors
+    search_options.siw_options.max_num_subsearches = options.max_num_subsearches
+    return search_options
+
+
+def solve(options: Options):
+    parser_options = ParserOptions()
+    parser = Parser(options.domain_file, parser_options)
+    formalism_task = parser.parse_task(options.task_file, parser_options)
+    planning_domain = parser.get_domain()
+    dl_repository, policy_repository = create_policy_repositories(planning_domain)
+    policy = parse_policy(options.policy_file.read_text(), planning_domain, policy_repository)
+
+    execution_context = ExecutionContext(options.num_threads)
+    task = Task(formalism_task)
+    context = LiftedTaskSearchContext(task, execution_context)
+    search_options = create_search_options(options)
+
+    search_start = perf_counter()
+    result = find_lifted_solution(context, policy, search_options)
+    search_time = perf_counter() - search_start
+    return PlannerRun(
+        result=result,
+        search_time=search_time,
+        num_expanded=None,
+        num_generated=None,
+        maximum_effective_width=None,
+        average_effective_width=None,
+        num_solved_subsearches=0,
+    )
+
+
+def call_statistic(statistics, method_name: str):
+    method = getattr(statistics, method_name, None)
+    if method is None:
+        return None
+    return method()
+
+
+def format_optional(value) -> str:
+    return "null" if value is None else str(value)
+
+
+def main() -> int:
+    total_start = perf_counter()
+    options = parse_args()
+    run = solve(options)
+    total_time = perf_counter() - total_start
+    result = run.result
+    write_plan(result, options.plan_file)
+
+    print(f"status: {result.status.name}")
+    if result.plan is not None:
+        print(f"plan_length: {result.plan.get_length()}")
+        print(f"plan_cost: {result.plan.get_cost()}")
+    print(f"search_time: {run.search_time:.6f}")
+    print(f"total_time: {total_time:.6f}")
+    if run.num_expanded is not None:
+        print(f"num_expanded: {run.num_expanded}")
+    if run.num_generated is not None:
+        print(f"num_generated: {run.num_generated}")
+    print(f"maximum_effective_width: {format_optional(run.maximum_effective_width)}")
+    print(f"average_effective_width: {format_optional(run.average_effective_width)}")
+    print(f"num_solved_subsearches: {run.num_solved_subsearches}")
+    if options.verbosity > 0 and result.plan is not None:
+        print("\n".join(format_plan_action(node.label) for node in result.plan.get_labeled_succ_nodes()))
+    return 0 if result.status == SearchStatus.SOLVED else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

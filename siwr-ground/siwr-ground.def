@@ -1,0 +1,32 @@
+Bootstrap: docker
+From: python:3.13-slim
+
+%setup
+    rootfs="${APPTAINER_ROOTFS:-${SINGULARITY_ROOTFS:-}}"
+    if [ -n "$rootfs" ]; then
+        mkdir -p "$rootfs/proj"
+    fi
+
+%files
+    ground-siwr /planner/ground-siwr
+
+%post
+    apt-get update
+    apt-get install --no-install-recommends -y ca-certificates
+    python -m pip install --no-cache-dir pytyr==0.0.19 pyrunir==0.0.3
+    chmod +x /planner/ground-siwr
+    rm -rf /var/lib/apt/lists/*
+
+%runscript
+    #! /bin/bash
+    set -euo pipefail
+    exec /planner/ground-siwr "$@"
+
+%labels
+Name        Tyr-Ground-SIW
+Description Ground Serialized IW implemented through the pytyr Python bindings
+Authors     Dominik Drexler <dominik.drexler@liu.se>
+SupportsDerivedPredicates yes
+SupportsQuantifiedPreconditions yes
+SupportsQuantifiedEffects yes
+
