@@ -42,8 +42,10 @@ From: ubuntu:20.04
     cd /planner/BFWS/fd-version
     ./build.py
 
-    ## Strip binaries.
-    strip --strip-all /planner/BFWS/ff-version/bfws
+    ## Strip generated native artifacts.
+    find /planner/BFWS/fd-version -maxdepth 1 -type f \
+        \( -name libbfws.so -o -name bfws -o -name downward \) \
+        -exec strip --strip-all {} +
 
     ## Remove packages unneeded for running the planner.
     apt-get -y autoremove cmake \
