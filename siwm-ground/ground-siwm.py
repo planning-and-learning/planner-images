@@ -66,14 +66,20 @@ def format_action(action) -> str:
     return f"({name} {objects})" if objects else f"({name})"
 
 
-def extract_plan(result):
+def extract_actions(result) -> list:
     if not result.is_successful():
-        return [], None, None
+        return []
     if result.plan is None:
         raise RuntimeError("Successful SIWM search returned no plan.")
 
-    actions = [node.label for node in result.plan.get_labeled_succ_nodes()]
-    return actions, result.plan.get_cost(), result.plan.get_length()
+    return [node.label for node in result.plan.get_labeled_succ_nodes()]
+
+
+def replay_plan_cost(search_context, actions: list):
+    node = search_context.successor_generator.get_initial_node()
+    for action in actions:
+        node = search_context.successor_generator.get_successor_node(node, action)
+    return node.get_metric()
 
 
 def solve(args: argparse.Namespace):
@@ -115,15 +121,17 @@ def solve(args: argparse.Namespace):
     search_start = perf_counter()
     result = find_ground_solution(task_context, program, options)
     search_time = perf_counter() - search_start
-    actions, plan_cost, plan_length = extract_plan(result)
-    return result, actions, plan_cost, plan_length, search_time
+    actions = extract_actions(result)
+    plan_cost = (
+        replay_plan_cost(search_context, actions) if result.is_successful() else None
+    )
+    return result, actions, plan_cost, search_time
 
 
 def write_plan(
     result,
     actions: list,
     plan_cost,
-    plan_length,
     plan_file: Path,
 ) -> None:
     plan_file.parent.mkdir(parents=True, exist_ok=True)
@@ -135,8 +143,8 @@ def write_plan(
 
     lines = [
         *(format_action(action) for action in actions),
-        f"; cost = {plan_cost} (unit cost)",
-        f"; length = {plan_length}",
+        f"; cost = {plan_cost} (general cost)",
+        f"; length = {len(actions)}",
     ]
     plan_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -144,13 +152,13 @@ def write_plan(
 def main() -> int:
     total_start = perf_counter()
     args = parse_args()
-    result, actions, plan_cost, plan_length, search_time = solve(args)
+    result, actions, plan_cost, search_time = solve(args)
     total_time = perf_counter() - total_start
-    write_plan(result, actions, plan_cost, plan_length, args.plan_file)
+    write_plan(result, actions, plan_cost, args.plan_file)
 
     print(f"status: {result.status.name}")
     if result.is_successful():
-        print(f"plan_length: {plan_length}")
+        print(f"plan_length: {len(actions)}")
         print(f"plan_cost: {plan_cost}")
     print(f"search_time: {search_time:.6f}")
     print(f"total_time: {total_time:.6f}")

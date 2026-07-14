@@ -103,6 +103,13 @@ def extract_actions(result) -> list:
     return actions
 
 
+def replay_plan_cost(search_context, actions: list):
+    node = search_context.successor_generator.get_initial_node()
+    for action in actions:
+        node = search_context.successor_generator.get_successor_node(node, action)
+    return node.get_metric()
+
+
 def solve(args: argparse.Namespace):
     parser_options = ParserOptions()
     parser = Parser(args.domain_file, parser_options)
@@ -142,10 +149,14 @@ def solve(args: argparse.Namespace):
     search_start = perf_counter()
     result = find_ground_solution(task_context, sketch, options)
     search_time = perf_counter() - search_start
-    return result, extract_actions(result), search_time
+    actions = extract_actions(result)
+    plan_cost = (
+        replay_plan_cost(search_context, actions) if result.is_successful() else None
+    )
+    return result, actions, plan_cost, search_time
 
 
-def write_plan(result, actions: list, plan_file: Path) -> None:
+def write_plan(result, actions: list, plan_cost, plan_file: Path) -> None:
     plan_file.parent.mkdir(parents=True, exist_ok=True)
     if not result.is_successful():
         plan_file.write_text(
@@ -155,7 +166,7 @@ def write_plan(result, actions: list, plan_file: Path) -> None:
 
     lines = [
         *(format_action(action) for action in actions),
-        f"; cost = {len(actions)} (unit cost)",
+        f"; cost = {plan_cost} (general cost)",
         f"; length = {len(actions)}",
     ]
     plan_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -164,14 +175,14 @@ def write_plan(result, actions: list, plan_file: Path) -> None:
 def main() -> int:
     total_start = perf_counter()
     args = parse_args()
-    result, actions, search_time = solve(args)
+    result, actions, plan_cost, search_time = solve(args)
     total_time = perf_counter() - total_start
-    write_plan(result, actions, args.plan_file)
+    write_plan(result, actions, plan_cost, args.plan_file)
 
     print(f"status: {result.status.name}")
     if result.is_successful():
         print(f"plan_length: {len(actions)}")
-        print(f"plan_cost: {len(actions)}")
+        print(f"plan_cost: {plan_cost}")
     print(f"search_time: {search_time:.6f}")
     print(f"total_time: {total_time:.6f}")
     print("maximum_effective_width: null")
