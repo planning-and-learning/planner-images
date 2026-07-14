@@ -17,5 +17,7 @@ build_planner() {
 
 build_planner siwr-ground siwr-ground.sif siwr-ground.def
 build_planner siwr-lifted siwr-lifted.sif siwr-lifted.def
+build_planner siwm-ground siwm-ground.sif siwm-ground.def
+build_planner siwm-lifted siwm-lifted.sif siwm-lifted.def
 build_planner bfws dual-bfws.sif dual-bfws.def
 build_planner lama lama-first.sif lama-first.def

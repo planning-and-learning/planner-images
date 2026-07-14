@@ -8,25 +8,24 @@ From: python:3.13-slim
     fi
 
 %files
-    lifted-siwr /planner/lifted-siwr
+    lifted-siwr.py /planner/lifted-siwr.py
 
 %post
     apt-get update
     apt-get install --no-install-recommends -y ca-certificates
-    python -m pip install --no-cache-dir pyrunir==0.0.6
-    chmod +x /planner/lifted-siwr
+    python -m pip install --no-cache-dir pyrunir==0.0.22
+    chmod +x /planner/lifted-siwr.py
     rm -rf /var/lib/apt/lists/*
 
 %runscript
     #! /bin/bash
     set -euo pipefail
-    exec /planner/lifted-siwr "$@"
+    exec /planner/lifted-siwr.py "$@"
 
 %labels
-Name        Tyr-Lifted-SIW
-Description Lifted Serialized IW implemented through the pytyr Python bindings
+Name        RunIR-Lifted-SIWR
+Description Lifted SIWR sketch search implemented through the pyrunir Python bindings
 Authors     Dominik Drexler <dominik.drexler@liu.se>
 SupportsDerivedPredicates yes
 SupportsQuantifiedPreconditions yes
 SupportsQuantifiedEffects yes
-

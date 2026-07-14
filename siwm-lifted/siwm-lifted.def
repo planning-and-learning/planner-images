@@ -8,23 +8,23 @@ From: python:3.13-slim
     fi
 
 %files
-    ground-siwr.py /planner/ground-siwr.py
+    lifted-siwm.py /planner/lifted-siwm.py
 
 %post
     apt-get update
     apt-get install --no-install-recommends -y ca-certificates
     python -m pip install --no-cache-dir pyrunir==0.0.22
-    chmod +x /planner/ground-siwr.py
+    chmod +x /planner/lifted-siwm.py
     rm -rf /var/lib/apt/lists/*
 
 %runscript
     #! /bin/bash
     set -euo pipefail
-    exec /planner/ground-siwr.py "$@"
+    exec /planner/lifted-siwm.py "$@"
 
 %labels
-Name        RunIR-Ground-SIWR
-Description Ground SIWR sketch search implemented through the pyrunir Python bindings
+Name        RunIR-Lifted-SIWM
+Description Lifted SIWM module-program search implemented through the pyrunir Python bindings
 Authors     Dominik Drexler <dominik.drexler@liu.se>
 SupportsDerivedPredicates yes
 SupportsQuantifiedPreconditions yes

@@ -1,11 +1,11 @@
-# Tyr Lifted SIW
+# RunIR Lifted SIWR
 
-Lifted Serialized IW baseline using the `pytyr` Python bindings.
+Lifted SIWR using `pyrunir.kr.ps.base.find_lifted_solution` with
+`universal = False`.
 
 ```sh
-lifted-siwr domain.pddl task.pddl plan.out policy.txt
+lifted-siwr.py domain.pddl task.pddl plan.out sketch.txt
 ```
 
-The fourth argument is accepted for compatibility with the policy-runner
-interface. It is ignored because this is a classical planner baseline.
-
+The four positional arguments are required. The sketch file must contain a
+RunIR `(:sketch ...)` description.

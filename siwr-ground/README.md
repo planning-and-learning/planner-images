@@ -1,11 +1,11 @@
-# Tyr Ground SIW
+# RunIR Ground SIWR
 
-Ground Serialized IW baseline using the `pytyr` Python bindings.
+Ground SIWR using `pyrunir.kr.ps.base.find_ground_solution` with
+`universal = False`.
 
 ```sh
-ground-siwr domain.pddl task.pddl plan.out policy.txt
+ground-siwr.py domain.pddl task.pddl plan.out sketch.txt
 ```
 
-The fourth argument is accepted for compatibility with the policy-runner
-interface. It is ignored because this is a classical planner baseline.
-
+The four positional arguments are required. The sketch file must contain a
+RunIR `(:sketch ...)` description.
