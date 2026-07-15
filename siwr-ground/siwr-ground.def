@@ -13,7 +13,7 @@ From: python:3.13-slim
 %post
     apt-get update
     apt-get install --no-install-recommends -y ca-certificates
-    python -m pip install --no-cache-dir pyrunir==0.0.22
+    python -m pip install --no-cache-dir pyrunir==0.0.23
     chmod +x /planner/ground-siwr.py
     rm -rf /var/lib/apt/lists/*
 

@@ -10,10 +10,8 @@ from time import perf_counter
 from pypddl.formalism import ParserOptions
 from pyrunir.datasets import LiftedTaskSearchContext
 from pyrunir.kr import LiftedTaskContext
-from pyrunir.kr.dl.ext import ConstructorRepositoryFactory
 from pyrunir.kr.ps.ext import (
     LiftedModuleProgramSearchOptions,
-    RepositoryFactory,
     find_lifted_solution,
 )
 from pyrunir.kr.ps.ext.dl import parse_module_program
@@ -87,12 +85,10 @@ def solve(args: argparse.Namespace):
     task = Task(formalism_task)
     search_context = LiftedTaskSearchContext(task, execution_context)
     task_context = LiftedTaskContext(search_context)
-    dl_repository = ConstructorRepositoryFactory().create(task)
-    program_repository = RepositoryFactory().create(dl_repository)
     program = parse_module_program(
         args.program_file.read_text(encoding="utf-8"),
         planning_domain,
-        program_repository,
+        task_context.ext_repository,
     )
 
     options = LiftedModuleProgramSearchOptions()
