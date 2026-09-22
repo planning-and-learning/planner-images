@@ -9,11 +9,9 @@ from time import perf_counter
 
 from pypddl.formalism import ParserOptions
 from pyrunir.datasets import LiftedTaskSearchContext
-from pyrunir.kr import LiftedTaskContext
-from pyrunir.kr.dl.base.semantics import ConstructorRepositoryFactory
+from pyrunir.kr import DomainContext, LiftedTaskContext
 from pyrunir.kr.ps.base import (
     LiftedSketchSearchOptions,
-    RepositoryFactory,
     find_lifted_solution,
 )
 from pyrunir.kr.ps.base.dl import parse_sketch
@@ -55,12 +53,6 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def format_action(action) -> str:
-    name = action.get_action().get_name()
-    objects = " ".join(obj.get_name() for obj in action.get_objects())
-    return f"({name} {objects})" if objects else f"({name})"
-
-
 def extract_actions(result) -> list:
     if not result.is_successful():
         return []
@@ -99,9 +91,12 @@ def extract_actions(result) -> list:
 
 
 def replay_plan_cost(search_context, actions: list):
-    node = search_context.successor_generator.get_initial_node()
+    generator = search_context.successor_generator
+    repository = search_context.state_repository
+    evaluator = search_context.axiom_evaluator
+    node = generator.get_initial_node(repository, evaluator)
     for action in actions:
-        node = search_context.successor_generator.get_successor_node(node, action)
+        node = generator.get_successor_node(node, action, repository, evaluator)
     return node.get_metric()
 
 
@@ -114,13 +109,12 @@ def solve(args: argparse.Namespace):
     execution_context = ExecutionContext(args.num_threads)
     task = Task(formalism_task)
     search_context = LiftedTaskSearchContext(task, execution_context)
-    task_context = LiftedTaskContext(search_context)
-    dl_repository = ConstructorRepositoryFactory().create(planning_domain)
-    sketch_repository = RepositoryFactory().create(dl_repository)
+    domain_context = DomainContext(planning_domain)
+    task_context = LiftedTaskContext(domain_context, search_context)
     sketch = parse_sketch(
         args.sketch_file.read_text(encoding="utf-8"),
         planning_domain,
-        sketch_repository,
+        domain_context.base_repository,
     )
 
     options = LiftedSketchSearchOptions()
@@ -130,7 +124,7 @@ def solve(args: argparse.Namespace):
         None if args.max_time is None else timedelta(seconds=args.max_time)
     )
     options.random_seed = args.random_seed
-    options.shuffle_labeled_succ_nodes = args.shuffle_successors
+    options.shuffle_choice_points = args.shuffle_successors
 
     search_start = perf_counter()
     result = find_lifted_solution(task_context, sketch, options)
@@ -151,7 +145,7 @@ def write_plan(result, actions: list, plan_cost, plan_file: Path) -> None:
         return
 
     lines = [
-        *(format_action(action) for action in actions),
+        *(str(action) for action in actions),
         f"; cost = {plan_cost} (general cost)",
         f"; length = {len(actions)}",
     ]
@@ -175,7 +169,7 @@ def main() -> int:
     print("average_effective_width: null")
     print("num_solved_subsearches: 0")
     if args.verbosity > 0 and actions:
-        print(*(format_action(action) for action in actions), sep="\n")
+        print(*actions, sep="\n")
     return 0 if result.is_successful() else 1
 
 

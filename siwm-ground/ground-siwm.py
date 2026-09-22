@@ -9,7 +9,7 @@ from time import perf_counter
 
 from pypddl.formalism import ParserOptions
 from pyrunir.datasets import GroundTaskSearchContext
-from pyrunir.kr import GroundTaskContext
+from pyrunir.kr import DomainContext, GroundTaskContext
 from pyrunir.kr.ps.ext import (
     GroundModuleProgramSearchOptions,
     find_ground_solution,
@@ -58,12 +58,6 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def format_action(action) -> str:
-    name = action.get_action().get_name()
-    objects = " ".join(obj.get_name() for obj in action.get_objects())
-    return f"({name} {objects})" if objects else f"({name})"
-
-
 def extract_actions(result) -> list:
     if not result.is_successful():
         return []
@@ -74,9 +68,12 @@ def extract_actions(result) -> list:
 
 
 def replay_plan_cost(search_context, actions: list):
-    node = search_context.successor_generator.get_initial_node()
+    generator = search_context.successor_generator
+    repository = search_context.state_repository
+    evaluator = search_context.axiom_evaluator
+    node = generator.get_initial_node(repository, evaluator)
     for action in actions:
-        node = search_context.successor_generator.get_successor_node(node, action)
+        node = generator.get_successor_node(node, action, repository, evaluator)
     return node.get_metric()
 
 
@@ -98,11 +95,12 @@ def solve(args: argparse.Namespace):
         raise RuntimeError(f"Grounding failed: {ground_result.status.name}")
 
     search_context = GroundTaskSearchContext(ground_result.task, execution_context)
-    task_context = GroundTaskContext(search_context)
+    domain_context = DomainContext(planning_domain)
+    task_context = GroundTaskContext(domain_context, search_context)
     program = parse_module_program(
         args.program_file.read_text(encoding="utf-8"),
         planning_domain,
-        task_context.ext_repository,
+        domain_context.ext_repository,
     )
 
     options = GroundModuleProgramSearchOptions()
@@ -112,7 +110,7 @@ def solve(args: argparse.Namespace):
         None if args.max_time is None else timedelta(seconds=args.max_time)
     )
     options.random_seed = args.random_seed
-    options.shuffle_labeled_succ_nodes = args.shuffle_successors
+    options.shuffle_choice_points = args.shuffle_successors
 
     search_start = perf_counter()
     result = find_ground_solution(task_context, program, options)
@@ -138,7 +136,7 @@ def write_plan(
         return
 
     lines = [
-        *(format_action(action) for action in actions),
+        *(str(action) for action in actions),
         f"; cost = {plan_cost} (general cost)",
         f"; length = {len(actions)}",
     ]
@@ -162,7 +160,7 @@ def main() -> int:
     print("average_effective_width: null")
     print("num_solved_subsearches: 0")
     if args.verbosity > 0 and actions:
-        print(*(format_action(action) for action in actions), sep="\n")
+        print(*actions, sep="\n")
     return 0 if result.is_successful() else 1
 
 
