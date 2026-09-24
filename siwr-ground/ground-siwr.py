@@ -37,8 +37,6 @@ def parse_args() -> argparse.Namespace:
         "--max-time", type=float, default=None, help="Search time limit in seconds."
     )
     parser.add_argument("--num-threads", type=int, default=1)
-    parser.add_argument("--random-seed", type=int, default=0)
-    parser.add_argument("--shuffle-successors", action="store_true")
     parser.add_argument("--enable-invariant-synthesis", action="store_true")
     parser.add_argument("--verbosity", type=int, default=1)
     args = parser.parse_args()
@@ -62,37 +60,10 @@ def extract_actions(result) -> list:
     if not result.is_successful():
         return []
 
-    graph = result.graph
-    initial_vertices = [
-        vertex
-        for vertex in graph.get_vertex_indices()
-        if graph.get_vertex_property(vertex).is_initial
-    ]
-    if len(initial_vertices) != 1:
-        raise RuntimeError(
-            f"Expected one initial proof vertex, found {len(initial_vertices)}."
-        )
+    if result.plan is None:
+        raise RuntimeError("Successful SIWR search returned no plan.")
 
-    actions = []
-    seen = set()
-    vertex = initial_vertices[0]
-    while not graph.get_vertex_property(vertex).is_goal:
-        if vertex in seen:
-            raise RuntimeError("SIWR proof graph contains a cycle.")
-        seen.add(vertex)
-
-        out_edges = list(graph.get_out_edge_indices(vertex))
-        if len(out_edges) != 1:
-            raise RuntimeError(
-                "Expected a single proof path with universal search disabled, "
-                f"found {len(out_edges)} outgoing edges."
-            )
-
-        edge = out_edges[0]
-        actions.append(graph.get_edge_property(edge).transition.action)
-        vertex = graph.get_target(edge)
-
-    return actions
+    return [node.label for node in result.plan.get_labeled_succ_nodes()]
 
 
 def replay_plan_cost(search_context, actions: list):
@@ -137,8 +108,6 @@ def solve(args: argparse.Namespace):
     options.max_time = (
         None if args.max_time is None else timedelta(seconds=args.max_time)
     )
-    options.random_seed = args.random_seed
-    options.shuffle_choice_points = args.shuffle_successors
 
     search_start = perf_counter()
     result = find_ground_solution(task_context, sketch, options)

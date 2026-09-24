@@ -11,10 +11,10 @@ from pypddl.formalism import ParserOptions
 from pyrunir.datasets import GroundTaskSearchContext
 from pyrunir.kr import DomainContext, GroundTaskContext
 from pyrunir.kr.ps.ext import (
-    GroundModuleProgramSearchOptions,
+    GroundProgramSearchOptions,
     find_ground_solution,
 )
-from pyrunir.kr.ps.ext.dl import parse_module_program
+from pyrunir.kr.ps.ext.dl import parse_program
 from pyyggdrasil.execution import ExecutionContext
 from pytyr.formalism.planning import Parser
 from pytyr.planning.lifted import (
@@ -37,8 +37,6 @@ def parse_args() -> argparse.Namespace:
         "--max-time", type=float, default=None, help="Search time limit in seconds."
     )
     parser.add_argument("--num-threads", type=int, default=1)
-    parser.add_argument("--random-seed", type=int, default=0)
-    parser.add_argument("--shuffle-successors", action="store_true")
     parser.add_argument("--enable-invariant-synthesis", action="store_true")
     parser.add_argument("--verbosity", type=int, default=1)
     args = parser.parse_args()
@@ -97,20 +95,18 @@ def solve(args: argparse.Namespace):
     search_context = GroundTaskSearchContext(ground_result.task, execution_context)
     domain_context = DomainContext(planning_domain)
     task_context = GroundTaskContext(domain_context, search_context)
-    program = parse_module_program(
+    program = parse_program(
         args.program_file.read_text(encoding="utf-8"),
         planning_domain,
         domain_context.ext_repository,
     )
 
-    options = GroundModuleProgramSearchOptions()
+    options = GroundProgramSearchOptions()
     options.universal = False
     options.max_num_states = args.max_num_states
     options.max_time = (
         None if args.max_time is None else timedelta(seconds=args.max_time)
     )
-    options.random_seed = args.random_seed
-    options.shuffle_choice_points = args.shuffle_successors
 
     search_start = perf_counter()
     result = find_ground_solution(task_context, program, options)
