@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("task_file", type=Path)
     parser.add_argument("plan_file", type=Path)
     parser.add_argument("sketch_file", type=Path)
-    parser.add_argument("--max-num-states", type=int, default=1_000_000)
+    parser.add_argument("--max-num-states", type=int, default=None, help="State limit; omitted means unlimited.")
     parser.add_argument(
         "--max-time", type=float, default=None, help="Search time limit in seconds."
     )
@@ -36,7 +36,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--verbosity", type=int, default=1)
     args = parser.parse_args()
 
-    if args.max_num_states < 1:
+    if args.max_num_states is not None and args.max_num_states < 1:
         parser.error("--max-num-states must be at least 1.")
     if args.max_time is not None and args.max_time <= 0:
         parser.error("--max-time must be greater than 0.")
@@ -90,7 +90,8 @@ def solve(args: argparse.Namespace):
 
     options = LiftedSketchSearchOptions()
     options.universal = False
-    options.max_num_states = args.max_num_states
+    if args.max_num_states is not None:
+        options.max_num_states = args.max_num_states
     options.max_time = (
         None if args.max_time is None else timedelta(seconds=args.max_time)
     )
@@ -129,6 +130,8 @@ def main() -> int:
     write_plan(result, actions, plan_cost, args.plan_file)
 
     print(f"status: {result.status.name}")
+    print(f"num_expanded: {result.statistics.num_expanded if result.is_successful() else None}")
+    print(f"num_generated: {result.statistics.num_generated if result.is_successful() else None}")
     if result.is_successful():
         print(f"plan_length: {len(actions)}")
         print(f"plan_cost: {plan_cost}")
