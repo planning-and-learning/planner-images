@@ -8,6 +8,7 @@ From: ubuntu:20.04
     fi
 
 %files
+    ../report-resources.py /report-resources.py
     $PWD/LAPKT-public /planner/LAPKT-public
     $PWD/BFWS /planner/BFWS
 
@@ -75,7 +76,7 @@ From: ubuntu:20.04
     PLANFILE=$3
 
     ## Call your planner using FD-parser.
-    /planner/BFWS/fd-version/bfws.py $DOMAINFILE $PROBLEMFILE $PLANFILE
+    exec python3 /report-resources.py /planner/BFWS/fd-version/bfws.py "$DOMAINFILE" "$PROBLEMFILE" "$PLANFILE"
 
 
 ## Update the following fields with meta data about your submission.

@@ -8,19 +8,20 @@ From: python:3.13-slim
     fi
 
 %files
+    ../report-resources.py /report-resources.py
     ground-siwm.py /planner/ground-siwm.py
 
 %post
     apt-get update
     apt-get install --no-install-recommends -y ca-certificates
-    python -m pip install --no-cache-dir --only-binary=:all: 'pyrunir==0.2.10'
+    python -m pip install --no-cache-dir --only-binary=:all: 'pyrunir==0.2.11'
     chmod +x /planner/ground-siwm.py
     rm -rf /var/lib/apt/lists/*
 
 %runscript
     #! /bin/bash
     set -euo pipefail
-    exec /planner/ground-siwm.py "$@"
+    exec python3 /report-resources.py /planner/ground-siwm.py "$@"
 
 %labels
 Name        RunIR-Ground-SIWM

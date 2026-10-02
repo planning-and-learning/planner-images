@@ -159,6 +159,8 @@ def main() -> int:
     print(f"num_expanded: {result.statistics.num_expanded if result.is_successful() else None}")
     print(f"num_generated: {result.statistics.num_generated if result.is_successful() else None}")
     if result.is_successful():
+        print(f"choice_depth: {result.statistics.choice_depth}")
+        print(f"choice_width: {result.statistics.choice_width}")
         print(f"plan_length: {len(actions)}")
         print(f"plan_cost: {plan_cost}")
     print(f"search_time: {search_time:.6f}")

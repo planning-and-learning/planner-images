@@ -8,6 +8,7 @@ From: python:3.13-slim
     fi
 
 %files
+    ../report-resources.py /report-resources.py
     lifted-siwr.py /planner/lifted-siwr.py
 
 %post
@@ -20,7 +21,7 @@ From: python:3.13-slim
 %runscript
     #! /bin/bash
     set -euo pipefail
-    exec /planner/lifted-siwr.py "$@"
+    exec python3 /report-resources.py /planner/lifted-siwr.py "$@"
 
 %labels
 Name        RunIR-Lifted-SIWR

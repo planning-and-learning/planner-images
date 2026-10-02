@@ -39,6 +39,9 @@ Stage: run
         mkdir -p "$rootfs/proj"
     fi
 
+%files
+    ../report-resources.py /report-resources.py
+
 %files from build
     fast-downward/fast-downward.py
 	fast-downward/driver/
@@ -57,7 +60,7 @@ Stage: run
     PROBLEM_FILE="$2"
     PLAN_FILE="$3"
 
-	/fast-downward/fast-downward.py --plan-file "$PLAN_FILE" --alias lama-first "$DOMAIN_FILE" "$PROBLEM_FILE"
+	exec python3 /report-resources.py /fast-downward/fast-downward.py --plan-file "$PLAN_FILE" --alias lama-first "$DOMAIN_FILE" "$PROBLEM_FILE"
 
 
 %labels
