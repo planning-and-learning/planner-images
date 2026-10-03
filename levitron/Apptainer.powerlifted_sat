@@ -1,0 +1,85 @@
+# Stage 1: Compile the planner
+Bootstrap: docker
+From: ubuntu:22.04
+Stage: build
+
+%files
+    . /planner
+
+%post
+    ## Install all necessary dependencies.
+    apt-get update
+    apt-get -y install --no-install-recommends cmake g++ make pypy3 build-essential g++ python3-dev autotools-dev libicu-dev libbz2-dev libboost-all-dev=1.74.0.3ubuntu7 libboost-program-options1.74-dev
+
+    ## Clear build directory.
+    rm -rf /planner/builds
+
+    cd /planner/ext/powerlifted
+    pypy3 build.py
+    strip --strip-all /planner/ext/powerlifted/builds/release/search/search
+
+    cd /planner/ext/cpddl
+    make && make -C bin
+    strip --strip-all /planner/ext/cpddl/bin/pddl \
+                      /planner/ext/cpddl/bin/pddl-fdr \
+                      /planner/ext/cpddl/bin/pddl-lplan \
+                      /planner/ext/cpddl/bin/pddl-pddl \
+                      /planner/ext/cpddl/bin/pddl-symba \
+
+    cd /planner
+
+
+# Stage 2: Run the planner
+Bootstrap: docker
+From: ubuntu:22.04
+Stage: run
+
+%files from build
+    /planner/ext
+
+%post
+    apt-get update
+    apt-get -y install --no-install-recommends pypy3 libboost-program-options1.74-dev
+    rm -rf /var/lib/apt/lists/*
+
+%environment
+    export CPDDL_BIN=/planner/ext/cpddl/bin
+    export POWERLIFTED_IPC=/planner/ext/powerlifted
+
+# The runscript is called whenever the container is used to solve an instance.
+%runscript
+    DOMAINFILE="$1"
+    PROBLEMFILE="$2"
+    PLANFILE="$3"
+
+    pypy3 /planner/ext/powerlifted/powerlifted.py \
+              -d $DOMAINFILE -i $PROBLEMFILE --plan-file $PLANFILE \
+              --iteration alt-bfws1,rff,yannakakis,476 \
+              --iteration alt-bfws1,add,yannakakis,38 \
+              --iteration alt-bfws2,ff,yannakakis,74 \
+              --iteration alt-bfws2,add,yannakakis,359 \
+              --iteration lazy-po,ff,yannakakis,234 \
+              --iteration bfws2,blind,yannakakis,278 \
+              --iteration lazy-po,add,yannakakis,80 \
+              --iteration bfws1,blind,yannakakis,116 \
+              --iteration gbfs,rff,yannakakis,80 \
+              --iteration gbfs,add,yannakakis,29 \
+              --unit-cost --preprocess-task --only-effects-novelty-check \
+              --time-limit 1800
+
+# Define meta data
+%labels
+Name        Powerlifted Satisficing
+Description Powerlifted planner using a sequential portfolio configuration
+Authors     Augusto B. Corrêa <augusto.blaascorrea@unibas.ch>, Guillem Francès <guillem.frances@gmail.com>, Markus Hecher <hecher@mit.edu>, Davide Mario Longo <davidem.longo@gmail.com>, Jendrik Seipp <jendrik.seipp@liu.se>
+License     GPL 3
+Tracks      satisficing
+SupportsDerivedPredicates                       no
+SupportsUniversallyQuantifiedPreconditions      yes
+SupportsExistentiallyQuantifiedPreconditions    yes
+SupportsUniversallyQuantifiedEffects            yes
+SupportsNegativePreconditions                   no
+SupportsEqualityPreconditions                   yes
+SupportsInequalityPreconditions                 yes
+SupportsConditionalEffects                      yes
+SupportsImplyPreconditions                      yes

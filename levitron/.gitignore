@@ -1,0 +1,21 @@
+__pycache__/
+/output.sas
+/sas_plan
+/sas_plan.*
+/builds/
+/experiments/*/.venv/
+/experiments/*/data/
+/images/
+/misc/.tox/
+/misc/autodoc/downward-xmlrpc.secret
+/output.lifted
+/plan
+/plan.*
+/*theory
+/*pddl
+/*sif
+
+# Keep files included in the upstream source snapshot.
+!/experiments/ipc2023/data/
+!/ext/cpddl/third-party/bliss/build/
+!/ext/cpddl/third-party/cudd/build-aux/

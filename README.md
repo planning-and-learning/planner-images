@@ -3,7 +3,11 @@
 Build the images from this directory with `./build-planners.sh`. Rebuild existing
 `.sif` files after changing the wrappers or definitions.
 
-All six images report `peak_memory_mb` on stdout: peak resident set size in
+The Levitron satisficing planner is vendored in `levitron/` and builds as
+`levitron_sat.sif`. Run it with `./levitron_sat.sif DOMAIN PROBLEM PLAN`;
+portfolio plans use numbered suffixes such as `PLAN.1`.
+
+All seven images report `peak_memory_mb` on stdout: peak resident set size in
 decimal MB (1 MB = 1,000,000 bytes), including parsing, grounding, and search.
 Validation runs outside the image and is excluded. Linux reports the maximum
 individual-process RSS, including descendants waited for by the planner; this
@@ -20,8 +24,8 @@ RunIR's first discovered goal predecessor path. Width counts admitted bindings
 after effect filtering. These metrics are absent for failed searches and for
 planners without module-program choices.
 
-Check the resource wrapper without building images:
+Check the resource wrapper and Levitron portfolio exit status without building images:
 
 ```sh
-python3 -m unittest discover -p 'test_resources.py'
+python3 -m unittest test_resources test_levitron
 ```
