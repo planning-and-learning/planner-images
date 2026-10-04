@@ -1,6 +1,12 @@
 #!/bin/sh
 set -eu
 
+first_plan=
+if [ "${1:-}" = "--first" ]; then
+    first_plan=1
+    shift
+fi
+
 DOMAINFILE="$1"
 PROBLEMFILE="$2"
 PLANFILE="$3"
@@ -12,6 +18,7 @@ pypy3 /planner/fast-downward.py \
     --transform-task preprocess-h2 \
     --transform-task-options h2_time_limit,180 \
     --alias seq-sat-maidu \
+    ${first_plan:+--portfolio-single-plan} \
     --plan-file "$PLANFILE" \
     "$DOMAINFILE" "$PROBLEMFILE" || pypy3 /planner/ext/powerlifted/powerlifted.py \
     -d "$DOMAINFILE" -i "$PROBLEMFILE" --plan-file "$PLANFILE" \
@@ -26,4 +33,5 @@ pypy3 /planner/fast-downward.py \
     --iteration gbfs,rff,yannakakis,80 \
     --iteration gbfs,add,yannakakis,29 \
     --unit-cost --preprocess-task --only-effects-novelty-check \
+    ${first_plan:+--stop-after-first-plan} \
     --time-limit 1800

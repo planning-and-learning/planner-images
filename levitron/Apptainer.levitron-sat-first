@@ -1,0 +1,11 @@
+Bootstrap: localimage
+From: ../levitron-sat.sif
+
+%files
+    levitron-sat.sh /planner/levitron-sat.sh
+
+%runscript
+    exec python3 /report-resources.py /bin/sh /planner/levitron-sat.sh --first "$@"
+
+%labels
+Variant first-plan

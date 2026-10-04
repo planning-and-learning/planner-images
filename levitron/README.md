@@ -8,17 +8,29 @@ Upstream licenses and bundled dependencies are included.
 Build from this directory with:
 
 ```sh
-apptainer build ../levitron_sat.sif Apptainer.levitron_sat
+apptainer build ../levitron-sat.sif Apptainer.levitron-sat
 ```
 
 The repository's `../build-planners.sh` also builds this image. Run it with
-`../levitron_sat.sif DOMAIN PROBLEM PLAN`. Portfolio plans use numbered suffixes
+`../levitron-sat.sif DOMAIN PROBLEM PLAN`. Portfolio plans use numbered suffixes
 such as `PLAN.1`.
+
+A separate first-plan variant retains these SAT portfolios and limits:
+
+```sh
+apptainer build ../levitron-sat-first.sif Apptainer.levitron-sat-first
+../levitron-sat-first.sif DOMAIN PROBLEM PLAN
+```
+
+Build `levitron-sat.sif` first: the new recipe derives from that local image
+and installs the current shared launcher. It enables `--portfolio-single-plan`
+for Maidu and `--stop-after-first-plan` for the Powerlifted fallback.
+`../build-planners.sh` builds both images in order.
 
 The recipe retains the upstream satisficing configuration and limits: Maidu
 with a 6 GB memory limit, a 30 minute overall time limit, and a 15 minute
 translation limit, followed on failure by the 1800 second Powerlifted portfolio.
-`levitron_sat.sh` contains this launcher so the shared resource wrapper can report
+`levitron-sat.sh` contains this launcher so the shared resource wrapper can report
 `peak_memory_mb` for the complete run. Local recipe changes also add `/proj`
 mount points and Python 3 for the resource wrapper; `.gitignore` keeps all files
 from the upstream snapshot visible to Git.

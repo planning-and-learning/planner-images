@@ -56,7 +56,7 @@ Stage: run
     ../report-resources.py /report-resources.py
 
 %files from build
-    /planner/levitron_sat.sh
+    /planner/levitron-sat.sh
     /planner/driver
     /planner/fast-downward.py
     /planner/builds/release/bin
@@ -74,7 +74,7 @@ Stage: run
 
 # The runscript is called whenever the container is used to solve an instance.
 %runscript
-    exec python3 /report-resources.py /bin/sh /planner/levitron_sat.sh "$@"
+    exec python3 /report-resources.py /bin/sh /planner/levitron-sat.sh "$@"
 
 
 # Define meta data

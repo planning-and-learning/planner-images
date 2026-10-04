@@ -4,10 +4,22 @@ Build the images from this directory with `./build-planners.sh`. Rebuild existin
 `.sif` files after changing the wrappers or definitions.
 
 The Levitron satisficing planner is vendored in `levitron/` and builds as
-`levitron_sat.sif`. Run it with `./levitron_sat.sif DOMAIN PROBLEM PLAN`;
+`levitron-sat.sif`. Run it with `./levitron-sat.sif DOMAIN PROBLEM PLAN`;
 portfolio plans use numbered suffixes such as `PLAN.1`.
 
-All seven images report `peak_memory_mb` on stdout: peak resident set size in
+`levitron-sat-first.sif` uses the same SAT portfolios and limits, stopping each
+component after its first plan. It is built from `levitron-sat.sif`, without
+compiling the planners again. To add just this image after building the SAT image:
+
+```sh
+cd levitron
+apptainer build ../levitron-sat-first.sif Apptainer.levitron-sat-first
+```
+
+Run it with `./levitron-sat-first.sif DOMAIN PROBLEM PLAN` from the repository root.
+The first-plan LAMA image is named `lama-first.sif`.
+
+All images report `peak_memory_mb` on stdout: peak resident set size in
 decimal MB (1 MB = 1,000,000 bytes), including parsing, grounding, and search.
 Validation runs outside the image and is excluded. Linux reports the maximum
 individual-process RSS, including descendants waited for by the planner; this
