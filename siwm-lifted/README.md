@@ -10,7 +10,7 @@ lifted-siwm.py domain.pddl task.pddl plan.out program.txt
 The four positional arguments are required. The program file must contain a
 RunIR `(:program ...)` module-program description.
 
-The image uses `pyrunir==0.2.11`. Search has no state limit by default; pass
+The image uses `pyrunir==0.3.0`. Search has no state limit by default; pass
 `--max-num-states N` to impose one.
 
 Use `--state-memorization NONE` (the default) to avoid memoizing completed
