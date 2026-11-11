@@ -19,6 +19,15 @@ apptainer build ../levitron-sat-first.sif Apptainer.levitron-sat-first
 Run it with `./levitron-sat-first.sif DOMAIN PROBLEM PLAN` from the repository root.
 The first-plan LAMA image is named `lama-first.sif`.
 
+`scorpion.sif` runs Scorpion with any configuration given after the task:
+`./scorpion.sif DOMAIN TASK PLAN --search "astar(lmcut())"`, or by name, `./scorpion.sif DOMAIN TASK PLAN --config lmcut`.
+[scorpion/configs.json](scorpion/configs.json) names 44 default optimal
+baselines (pattern databases by combiner and generator, LM-cut, BJOLP,
+merge-and-shrink, Cartesian abstractions, operator counting, blind search and
+the full Scorpion configuration). Set `CPLEX_DIR` when building to link CPLEX
+for the LP configurations (`pho`, `ocp`, operator counting); that image must not
+be shared. See [scorpion/README.md](scorpion/README.md).
+
 All images report `peak_memory_mb` on stdout: peak resident set size in
 decimal MB (1 MB = 1,000,000 bytes), including parsing, grounding, and search.
 Validation runs outside the image and is excluded. Linux reports the maximum

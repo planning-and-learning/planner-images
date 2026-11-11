@@ -1,0 +1,313 @@
+{
+  "_comment": "Default baseline configurations for scorpion.sif, which contains this file: `scorpion.sif DOMAIN TASK PLAN --config NAME` runs NAME's options (combinable with other options such as --preprocess). Every configuration uses Scorpion's defaults; pho, ocp and operatorcounting need an image built with CPLEX.",
+  "configs": {
+    "scorpion": {
+      "options": [
+        "--alias",
+        "scorpion"
+      ],
+      "description": "Scorpion's recommended configuration (sys_scp + cartesian, perimstar, partial order reduction); its README adds --preprocess"
+    },
+    "cartesian": {
+      "options": [
+        "--search",
+        "astar(scp_online([cartesian()]))"
+      ],
+      "description": "online saturated cost partitioning over Cartesian CEGAR abstractions"
+    },
+    "lmcut": {
+      "options": [
+        "--search",
+        "astar(lmcut())"
+      ],
+      "description": "LM-cut"
+    },
+    "bjolp": {
+      "options": [
+        "--alias",
+        "seq-opt-bjolp"
+      ],
+      "description": "landmark cost partitioning (uniform, no LP)"
+    },
+    "merge-and-shrink": {
+      "options": [
+        "--search",
+        "astar(merge_and_shrink(merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector=score_based_filtering(scoring_functions=[goal_relevance(),dfp(),total_order()])),shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50k,threshold_before_merge=1))"
+      ],
+      "description": "merge-and-shrink, the configuration Scorpion's documentation recommends (no defaults exist)"
+    },
+    "blind": {
+      "options": [
+        "--search",
+        "astar(blind())"
+      ],
+      "description": "blind search"
+    },
+    "lmcut-seq": {
+      "options": [
+        "--search",
+        "astar(operatorcounting([state_equation_constraints(), lmcut_constraints()]))"
+      ],
+      "description": "operator counting with state-equation and LM-cut constraints"
+    },
+    "state-equation": {
+      "options": [
+        "--search",
+        "astar(operatorcounting([state_equation_constraints()]))"
+      ],
+      "description": "the state-equation heuristic"
+    },
+    "scp-online-sys1": {
+      "options": [
+        "--search",
+        "astar(scp_online([projections(systematic(1))]))"
+      ],
+      "description": "online saturated cost partitioning over the patterns of systematic(1)"
+    },
+    "scp-online-sys2": {
+      "options": [
+        "--search",
+        "astar(scp_online([projections(systematic(2))]))"
+      ],
+      "description": "online saturated cost partitioning over the patterns of systematic(2)"
+    },
+    "scp-online-sys3": {
+      "options": [
+        "--search",
+        "astar(scp_online([projections(systematic(3))]))"
+      ],
+      "description": "online saturated cost partitioning over the patterns of systematic(3)"
+    },
+    "scp-online-sys4": {
+      "options": [
+        "--search",
+        "astar(scp_online([projections(systematic(4))]))"
+      ],
+      "description": "online saturated cost partitioning over the patterns of systematic(4)"
+    },
+    "scp-online-sys-scp": {
+      "options": [
+        "--search",
+        "astar(scp_online([projections(sys_scp())]))"
+      ],
+      "description": "online saturated cost partitioning over the patterns of sys_scp()"
+    },
+    "scp-online-cegar": {
+      "options": [
+        "--search",
+        "astar(scp_online([projections(multiple_cegar())]))"
+      ],
+      "description": "online saturated cost partitioning over the patterns of multiple_cegar()"
+    },
+    "scp-online-hillclimbing": {
+      "options": [
+        "--search",
+        "astar(scp_online([projections(hillclimbing())]))"
+      ],
+      "description": "online saturated cost partitioning over the patterns of hillclimbing()"
+    },
+    "scp-online-genetic": {
+      "options": [
+        "--search",
+        "astar(scp_online([projections(genetic())]))"
+      ],
+      "description": "online saturated cost partitioning over the patterns of genetic()"
+    },
+    "scp-online-random-patterns": {
+      "options": [
+        "--search",
+        "astar(scp_online([projections(random_patterns())]))"
+      ],
+      "description": "online saturated cost partitioning over the patterns of random_patterns()"
+    },
+    "canonical-sys1": {
+      "options": [
+        "--search",
+        "astar(cpdbs(systematic(1)))"
+      ],
+      "description": "the canonical heuristic over the patterns of systematic(1)"
+    },
+    "canonical-sys2": {
+      "options": [
+        "--search",
+        "astar(cpdbs(systematic(2)))"
+      ],
+      "description": "the canonical heuristic over the patterns of systematic(2)"
+    },
+    "canonical-sys3": {
+      "options": [
+        "--search",
+        "astar(cpdbs(systematic(3)))"
+      ],
+      "description": "the canonical heuristic over the patterns of systematic(3)"
+    },
+    "canonical-sys4": {
+      "options": [
+        "--search",
+        "astar(cpdbs(systematic(4)))"
+      ],
+      "description": "the canonical heuristic over the patterns of systematic(4)"
+    },
+    "canonical-sys-scp": {
+      "options": [
+        "--search",
+        "astar(cpdbs(sys_scp()))"
+      ],
+      "description": "the canonical heuristic over the patterns of sys_scp()"
+    },
+    "canonical-cegar": {
+      "options": [
+        "--search",
+        "astar(cpdbs(multiple_cegar()))"
+      ],
+      "description": "the canonical heuristic over the patterns of multiple_cegar()"
+    },
+    "canonical-hillclimbing": {
+      "options": [
+        "--search",
+        "astar(cpdbs(hillclimbing()))"
+      ],
+      "description": "the canonical heuristic over the patterns of hillclimbing() (iPDB, = ipdb())"
+    },
+    "canonical-genetic": {
+      "options": [
+        "--search",
+        "astar(cpdbs(genetic()))"
+      ],
+      "description": "the canonical heuristic over the patterns of genetic()"
+    },
+    "canonical-random-patterns": {
+      "options": [
+        "--search",
+        "astar(cpdbs(random_patterns()))"
+      ],
+      "description": "the canonical heuristic over the patterns of random_patterns()"
+    },
+    "pho-sys1": {
+      "options": [
+        "--search",
+        "astar(pho([projections(systematic(1))], saturated=true))"
+      ],
+      "description": "saturated post-hoc optimization over the patterns of systematic(1)"
+    },
+    "pho-sys2": {
+      "options": [
+        "--search",
+        "astar(pho([projections(systematic(2))], saturated=true))"
+      ],
+      "description": "saturated post-hoc optimization over the patterns of systematic(2)"
+    },
+    "pho-sys3": {
+      "options": [
+        "--search",
+        "astar(pho([projections(systematic(3))], saturated=true))"
+      ],
+      "description": "saturated post-hoc optimization over the patterns of systematic(3)"
+    },
+    "pho-sys4": {
+      "options": [
+        "--search",
+        "astar(pho([projections(systematic(4))], saturated=true))"
+      ],
+      "description": "saturated post-hoc optimization over the patterns of systematic(4)"
+    },
+    "pho-sys-scp": {
+      "options": [
+        "--search",
+        "astar(pho([projections(sys_scp())], saturated=true))"
+      ],
+      "description": "saturated post-hoc optimization over the patterns of sys_scp()"
+    },
+    "pho-cegar": {
+      "options": [
+        "--search",
+        "astar(pho([projections(multiple_cegar())], saturated=true))"
+      ],
+      "description": "saturated post-hoc optimization over the patterns of multiple_cegar()"
+    },
+    "pho-hillclimbing": {
+      "options": [
+        "--search",
+        "astar(pho([projections(hillclimbing())], saturated=true))"
+      ],
+      "description": "saturated post-hoc optimization over the patterns of hillclimbing()"
+    },
+    "pho-genetic": {
+      "options": [
+        "--search",
+        "astar(pho([projections(genetic())], saturated=true))"
+      ],
+      "description": "saturated post-hoc optimization over the patterns of genetic()"
+    },
+    "pho-random-patterns": {
+      "options": [
+        "--search",
+        "astar(pho([projections(random_patterns())], saturated=true))"
+      ],
+      "description": "saturated post-hoc optimization over the patterns of random_patterns()"
+    },
+    "ocp-sys1": {
+      "options": [
+        "--search",
+        "astar(ocp([projections(systematic(1))]))"
+      ],
+      "description": "optimal cost partitioning over the patterns of systematic(1)"
+    },
+    "ocp-sys2": {
+      "options": [
+        "--search",
+        "astar(ocp([projections(systematic(2))]))"
+      ],
+      "description": "optimal cost partitioning over the patterns of systematic(2)"
+    },
+    "ocp-sys3": {
+      "options": [
+        "--search",
+        "astar(ocp([projections(systematic(3))]))"
+      ],
+      "description": "optimal cost partitioning over the patterns of systematic(3)"
+    },
+    "ocp-sys4": {
+      "options": [
+        "--search",
+        "astar(ocp([projections(systematic(4))]))"
+      ],
+      "description": "optimal cost partitioning over the patterns of systematic(4)"
+    },
+    "ocp-sys-scp": {
+      "options": [
+        "--search",
+        "astar(ocp([projections(sys_scp())]))"
+      ],
+      "description": "optimal cost partitioning over the patterns of sys_scp()"
+    },
+    "ocp-cegar": {
+      "options": [
+        "--search",
+        "astar(ocp([projections(multiple_cegar())]))"
+      ],
+      "description": "optimal cost partitioning over the patterns of multiple_cegar()"
+    },
+    "ocp-hillclimbing": {
+      "options": [
+        "--search",
+        "astar(ocp([projections(hillclimbing())]))"
+      ],
+      "description": "optimal cost partitioning over the patterns of hillclimbing()"
+    },
+    "ocp-genetic": {
+      "options": [
+        "--search",
+        "astar(ocp([projections(genetic())]))"
+      ],
+      "description": "optimal cost partitioning over the patterns of genetic()"
+    },
+    "ocp-random-patterns": {
+      "options": [
+        "--search",
+        "astar(ocp([projections(random_patterns())]))"
+      ],
+      "description": "optimal cost partitioning over the patterns of random_patterns()"
+    }
+  }
+}
